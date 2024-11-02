@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Viaje</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f8ff; }
+        .container { max-width: 400px; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); }
+        h2 { color: #007BFF; text-align: center; }
+        input[type="text"], input[type="number"] { width: calc(100% - 50px); padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
+        button { width: 40px; padding: 10px; background-color: #007BFF; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .item-details { display: flex; align-items: center; gap: 10px; }
+        .item-image { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+        li.checked { text-decoration: line-through; color: gray; }
+        .remove-btn { background-color: #FF4B4B; border: none; border-radius: 4px; color: white; cursor: pointer; padding: 5px 10px; }
+        .remove-btn:hover { background-color: #d11a2a; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Lista de Viaje</h2>
+        <input type="text" id="itemInput" placeholder="Añadir item">
+        <input type="number" id="quantityInput" placeholder="Cantidad" min="1">
+        <input type="file" id="imageInput" accept="image/*">
+        <button onclick="addItem()">+</button>
+        <ul id="itemList"></ul>
+    </div>
+
+    <script>
+        // Cargar lista de localStorage al iniciar
+        document.addEventListener("DOMContentLoaded", loadItems);
+
+        // Función para agregar un item
+        function addItem() {
+            const itemInput = document.getElementById("itemInput");
+            const quantityInput = document.getElementById("quantityInput");
+            const imageInput = document.getElementById("imageInput");
+
+            const itemText = itemInput.value.trim();
+            const quantity = quantityInput.value || 1;
+            const imageFile = imageInput.files[0];
+            
+            if (itemText === "") return;
+
+            let imageUrl = "";
+            if (imageFile) {
+                imageUrl = URL.createObjectURL(imageFile);
+            }
+
+            const li = createListItem(itemText, quantity, imageUrl);
+            document.getElementById("itemList").appendChild(li);
+
+            saveItems();
+            itemInput.value = "";
+            quantityInput.value = "";
+            imageInput.value = "";
+        }
+
+        // Función para crear un elemento de lista
+        function createListItem(text, quantity, imageUrl) {
+            const li = document.createElement("li");
+
+            const detailsDiv = document.createElement("div");
+            detailsDiv.classList.add("item-details");
+
+            if (imageUrl) {
+                const img = document.createElement("img");
+                img.src = imageUrl;
+                img.classList.add("item-image");
+                detailsDiv.appendChild(img);
+            }
+
+            const textSpan = document.createElement("span");
+            textSpan.textContent = `${text} (x${quantity})`;
+            detailsDiv.appendChild(textSpan);
+
+            const removeBtn = document.createElement("button");
+            removeBtn.textContent = "X";
+            removeBtn.classList.add("remove-btn");
+            removeBtn.onclick = (e) => {
+                e.stopPropagation();
+                li.remove();
+                saveItems();
+            };
+
+            li.appendChild(detailsDiv);
+            li.appendChild(removeBtn);
+            li.onclick = () => {
+                li.classList.toggle("checked");
+                saveItems();
+            };
+
+            return li;
+        }
+
+        // Guardar items en localStorage
+        function saveItems() {
+            const items = [];
+            document.querySelectorAll("#itemList li").forEach(li => {
+                const text = li.querySelector(".item-details span").textContent;
+                const checked = li.classList.contains("checked");
+                const imageUrl = li.querySelector(".item-image")?.src || "";
+                
+                items.push({ text, checked, imageUrl });
+            });
+            localStorage.setItem("items", JSON.stringify(items));
+        }
+
+        // Cargar items de localStorage
+        function loadItems() {
+            const items = JSON.parse(localStorage.getItem("items")) || [];
+            items.forEach(item => {
+                const [text, quantity] = item.text.match(/(.+)\s\(x(\d+)\)/).slice(1);
+                const li = createListItem(text, quantity, item.imageUrl);
+                if (item.checked) li.classList.add("checked");
+                document.getElementById("itemList").appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
